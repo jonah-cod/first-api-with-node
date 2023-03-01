@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 
 const { config } = require('../sqlconfig');
 const { getUser } = require('../services/getUserService');
+const { createToken, verifyToken } = require('../services/jwtServices');
 
 
 module.exports = {
@@ -21,53 +22,7 @@ module.exports = {
       createUser: async(req, res)=>{
             //reading the request body
             const details = req.body;
-
-            // bcrypt synchronous 
-            // generating salt in different functions
-
-            // bcrypt.genSalt(8, (err, salt)=>{
-            //       if(err){
-            //             console.log(err)
-            //       }else{
-            //             bcrypt.hash(details.password, salt, async(err, hashed_pwd)=>{
-            //                   if (err) {
-            //                         console.log(err)
-            //                   }else{
-            //                         try{
-            //                               console.log(hashed_pwd)
-            //                               await sql.connect(config);
-            //                               let results = await sql.query`INSERT INTO users VALUES(${details.name}, ${details.profession}, ${hashed_pwd})`
-                                    
-            //                               if(results.rowsAffected.length) res.json({success: true, message: 'user created successfully'})
-                                          
-            //                               } catch(error){
-            //                                     console.log(error)
-            //                               }
-            //                   }
-            //             })
-                        
-            //       }
-            // })
-
-            // auto-generating salt
-
-            // bcrypt.hash(details.password, 8, async(err, hashed_pwd)=>{
-            //       if (err) {
-            //             console.log(err)
-            //       }else{
-            //             try{
-            //                   console.log({...details, password: hashed_pwd})
-            //                   await sql.connect(config);
-            //                   let results = await sql.query`INSERT INTO users VALUES(${details.name}, ${details.profession}, ${hashed_pwd})`
-                        
-            //                   if(results.rowsAffected.length) res.json({success: true, message: 'user created successfully'})
-                              
-            //                   } catch(error){
-            //                         console.log(error)
-            //                   }
-            //       }
-            // })
-
+            
             /// using bcrypt asynchonous
             let hashed_pwd = await bcrypt.hash(details.password, 8);
       
@@ -88,7 +43,10 @@ module.exports = {
             let user = await getUser(credentials.id)
             if(user){
                   let match =  await bcrypt.compare(credentials.password, user.password)
-                  match? res.json({success: true, message: 'login successful'}): res.json({success: false, message: 'check your credentials'})
+
+                  let token = await createToken({full_names: user.full_names, id: user.id})
+
+                  match? res.json({success: true, message: 'login successful', token}): res.json({success: false, message: 'check your credentials'})
             }else{
                   res.status(404).json({message: "user doesn't exist"})
             }
@@ -135,5 +93,18 @@ module.exports = {
             } catch (error) {
                   console.log(error)
             }
+      },
+
+      userAuthenticate: async (req, res)=>{
+            let token = req.headers["authorization"]
+            token = token.split(" ")[1]
+            try {
+                 let data = await verifyToken(token); 
+                 res.json(data)
+            } catch (error) {
+                  res.json(error)
+            }
+            
+            
       }
 }

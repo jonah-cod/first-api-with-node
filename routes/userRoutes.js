@@ -5,11 +5,13 @@ const { getAllTheUsers,
         getAUser, 
         updateUser, 
         deleteUser, 
-        loginUser} = require('../controllers/userControllers')
+        loginUser,
+        userAuthenticate} = require('../controllers/userControllers')
 
 userRouter.get('/', getAllTheUsers);
 
 userRouter.post('/', createUser);
+
 userRouter.post('/login', loginUser)
 
 userRouter.get('/:id', getAUser);
@@ -17,5 +19,7 @@ userRouter.get('/:id', getAUser);
 userRouter.put('/', updateUser)
 
 userRouter.delete('/:id', deleteUser)
+
+userRouter.get('/user/authendicate', userAuthenticate)
 
 module.exports = userRouter;
